@@ -1,11 +1,9 @@
 package main
 
 import (
+	"C"
 	"fmt"
-	"github.com/Tnze/CoolQ-Golang-SDK/v2/cqp"
-	"github.com/Tnze/CoolQ-Golang-SDK/v2/cqp/util"
 	"os"
-	"path/filepath"
 
 	"image"
 	"image/gif"
@@ -17,28 +15,16 @@ import (
 	_ "image/png"
 )
 
-// procImage 处理一张图片消息并返回处理结果
-// panic if msg is not a image like [CQ:image,file=1.jpg]
-func procImage(msg string) (string, error) {
-	imgDir := imageReg.FindStringSubmatch(msg)[1]
-	imgDir = cqp.GetImage(imgDir)
-
-	// 检查处理后图片是否已存在
-	baseProcImg, procImgDir := procImgPath(imgDir)
-	if _, err := os.Stat(procImgDir); err != nil && os.IsNotExist(err) {
-		err := convertImg(procImgDir, imgDir)
-		if err != nil {
-			return "", err
-		}
-	}
-	return util.CQCode("image", "file", baseProcImg), nil
+func main() {
 }
 
-func procImgPath(name string) (cqPath, absPath string) {
-	base := filepath.Base(name)
-	cqPath = filepath.Join(cqp.AppID, base)
-	absPath = filepath.Join(imgFold, base)
-	return
+//export convertPic
+func convertPic(dst, src string) int {
+	err := convertImg(dst, src)
+	if err != nil {
+		return -1
+	}
+	return 0
 }
 
 func convertImg(dst, src string) error {
@@ -55,7 +41,7 @@ func convertImg(dst, src string) error {
 		vFlipGIF(g)
 		return writeGif(dst, g)
 	}
-	Debugf("图片处理", "成功解析一张%s图片", typ)
+	// Debugf("图片处理", "成功解析一张%s图片", typ)
 	// 翻转后写入新图片
 	return writeImg(dst, typ, vFlip(img))
 }
