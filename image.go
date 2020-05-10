@@ -18,9 +18,9 @@ import (
 func main() {
 }
 
-//export convertPic
-func convertPic(dst, src string) int {
-	err := convertImg(dst, src)
+//export ConvertPic
+func ConvertPic() int {
+	err := convertImg("dstImg", "srcImg")
 	if err != nil {
 		return -1
 	}
@@ -102,14 +102,14 @@ func writeGif(dst string, g *gif.GIF) error {
 	return nil
 }
 
-// 上下翻转
+// 左右翻转
 func vFlip(m image.Image) image.Image {
 	mb := m.Bounds()
 	dst := image.NewRGBA(image.Rect(0, 0, mb.Dx(), mb.Dy()))
 	for x := mb.Min.X; x < mb.Max.X; x++ {
 		for y := mb.Min.Y; y < mb.Max.Y; y++ {
 			//  设置像素点
-			dst.Set(x, mb.Max.Y-y-1, m.At(x, y))
+			dst.Set(mb.Max.X-x-1, y, m.At(x, y))
 		}
 	}
 	return dst
@@ -129,7 +129,7 @@ func vFlipGIF(img *gif.GIF) {
 		for x := mb.Min.X; x < mb.Max.X; x++ {
 			for y := mb.Min.Y; y < mb.Max.Y; y++ {
 				// 设置像素点，此调换了Y坐标以达到垂直翻转的目的
-				dst.Set(x, p.Y-y-1, m.At(x, y))
+				dst.Set(p.X-x-1, y, m.At(x, y))
 			}
 		}
 		img.Image[i] = dst
