@@ -38,12 +38,12 @@ func convertImg(dst, src string) error {
 		if err != nil {
 			return fmt.Errorf("无法读取Gif图片，%v", err)
 		}
-		vFlipGIF(g)
+		hFlipGIF(g)
 		return writeGif(dst, g)
 	}
 	// Debugf("图片处理", "成功解析一张%s图片", typ)
 	// 翻转后写入新图片
-	return writeImg(dst, typ, vFlip(img))
+	return writeImg(dst, typ, hFlip(img))
 }
 
 func readImg(src string) (image.Image, string, error) {
@@ -102,8 +102,8 @@ func writeGif(dst string, g *gif.GIF) error {
 	return nil
 }
 
-// 左右翻转
-func vFlip(m image.Image) image.Image {
+// 水平翻转
+func hFlip(m image.Image) image.Image {
 	mb := m.Bounds()
 	dst := image.NewRGBA(image.Rect(0, 0, mb.Dx(), mb.Dy()))
 	for x := mb.Min.X; x < mb.Max.X; x++ {
@@ -115,20 +115,20 @@ func vFlip(m image.Image) image.Image {
 	return dst
 }
 
-func vFlipGIF(img *gif.GIF) {
+func hFlipGIF(img *gif.GIF) {
 	p := img.Image[0].Rect.Max.Sub(img.Image[0].Rect.Min)
 	for i := 0; i < len(img.Image); i++ {
 		m := img.Image[i]
 		mb := m.Bounds()
 		dst := image.NewPaletted(image.Rect(
-			mb.Max.X,
-			p.Y-mb.Max.Y,
-			mb.Min.X,
-			p.Y-mb.Min.Y,
+			p.X-mb.Max.X,
+			mb.Max.Y,
+			p.X-mb.Min.X,
+			mb.Min.Y,
 		), m.Palette)
 		for x := mb.Min.X; x < mb.Max.X; x++ {
 			for y := mb.Min.Y; y < mb.Max.Y; y++ {
-				// 设置像素点，此调换了Y坐标以达到垂直翻转的目的
+				// 设置像素点，此调换了X坐标以达到水平翻转的目的
 				dst.Set(p.X-x-1, y, m.At(x, y))
 			}
 		}
