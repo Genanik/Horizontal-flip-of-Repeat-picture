@@ -16,18 +16,39 @@ import (
 )
 
 func main() {
+	ReverseGif()
 }
 
-//export ConvertPic
-func ConvertPic() int {
-	err := convertImg("dstImg", "srcImg")
+/*
+	return code:
+	-1	unexpected error
+	0	successful
+	1	is not gif
+*/
+
+//export ReverseGif
+func ReverseGif() int {
+	err, isGifImg := isGif("srcImg")
+	if err != nil {
+		return -1
+	}
+	if isGifImg {
+		reverseGif("dstImg", "srcImg")
+		return 0
+	}
+	return -1
+}
+
+//export HorizontalFilpPic
+func HorizontalFilpPic() int {
+	err := hConvertImg("dstImg", "srcImg")
 	if err != nil {
 		return -1
 	}
 	return 0
 }
 
-func convertImg(dst, src string) error {
+func hConvertImg(dst, src string) error {
 	// 读取源图片
 	img, typ, err := readImg(src)
 	if err != nil {
@@ -133,5 +154,44 @@ func hFlipGIF(img *gif.GIF) {
 			}
 		}
 		img.Image[i] = dst
+	}
+}
+
+func isGif(src string) (error, bool) {
+	// 读取源图片
+	_, typ, err := readImg(src)
+	if err != nil {
+		return err, false
+	}
+	if typ == "gif" {
+		return nil, true
+	}
+	return nil, false
+}
+
+func reverseGif(dst, src string) error {
+	// 读取源图片
+	g, err := readGif(src)
+	if err != nil {
+		return fmt.Errorf("无法读取Gif图片，%v", err)
+	}
+	g = rGIF(g)
+	return writeGif(dst, g)
+}
+
+func rGIF(img *gif.GIF) *gif.GIF {
+	var times = 0
+	var dstPalette = make([]*image.Paletted, 0)
+	for i := len(img.Image) - 1; i > -1; i-- {
+		dstPalette = append(dstPalette, img.Image[i])
+		times++
+	}
+	return &gif.GIF{
+		Image:           dstPalette,
+		Delay:           img.Delay,
+		LoopCount:       img.LoopCount,
+		Disposal:        img.Disposal,
+		Config:          img.Config,
+		BackgroundIndex: img.BackgroundIndex,
 	}
 }
