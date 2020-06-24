@@ -175,23 +175,16 @@ func reverseGif(dst, src string) error {
 	if err != nil {
 		return fmt.Errorf("无法读取Gif图片，%v", err)
 	}
-	g = rGIF(g)
+	rGIF(g)
 	return writeGif(dst, g)
 }
 
-func rGIF(img *gif.GIF) *gif.GIF {
+func rGIF(img *gif.GIF) {
 	var times = 0
 	var dstPalette = make([]*image.Paletted, 0)
 	for i := len(img.Image) - 1; i > -1; i-- {
 		dstPalette = append(dstPalette, img.Image[i])
 		times++
 	}
-	return &gif.GIF{
-		Image:           dstPalette,
-		Delay:           img.Delay,
-		LoopCount:       img.LoopCount,
-		Disposal:        img.Disposal,
-		Config:          img.Config,
-		BackgroundIndex: img.BackgroundIndex,
-	}
+	img.Image = dstPalette
 }
