@@ -18,7 +18,17 @@ import (
 
 func main() {
 	//ReverseGif()
+
+	g, err := readGif("dstImg")
+	if err != nil {
+		fmt.Errorf("无法读取Gif图片，%v", err)
+	}
+	optimizationGif(g.Image)
+	writeGif("dst", g)
+
 }
+
+var noneColor = color.RGBA{R: 0, G: 0, B: 0, A: 0}
 
 /*
 	return code:
@@ -39,6 +49,17 @@ func ReverseGif() int {
 	}
 	return -1
 }
+func isGif(src string) (error, bool) {
+	// 读取源图片
+	_, typ, err := readImg(src)
+	if err != nil {
+		return err, false
+	}
+	if typ == "gif" {
+		return nil, true
+	}
+	return nil, false
+}
 
 //export HorizontalFilpPic
 func HorizontalFilpPic() int {
@@ -47,25 +68,6 @@ func HorizontalFilpPic() int {
 		return -1
 	}
 	return 0
-}
-
-func hConvertImg(dst, src string) error {
-	// 读取源图片
-	img, typ, err := readImg(src)
-	if err != nil {
-		return err
-	}
-	if typ == "gif" {
-		g, err := readGif(src)
-		if err != nil {
-			return fmt.Errorf("无法读取Gif图片，%v", err)
-		}
-		hFlipGIF(g)
-		return writeGif(dst, g)
-	}
-	// Debugf("图片处理", "成功解析一张%s图片", typ)
-	// 翻转后写入新图片
-	return writeImg(dst, typ, hFlip(img))
 }
 
 func readImg(src string) (image.Image, string, error) {
@@ -124,6 +126,25 @@ func writeGif(dst string, g *gif.GIF) error {
 	return nil
 }
 
+func hConvertImg(dst, src string) error {
+	// 读取源图片
+	img, typ, err := readImg(src)
+	if err != nil {
+		return err
+	}
+	if typ == "gif" {
+		g, err := readGif(src)
+		if err != nil {
+			return fmt.Errorf("无法读取Gif图片，%v", err)
+		}
+		hFlipGIF(g)
+		return writeGif(dst, g)
+	}
+	// Debugf("图片处理", "成功解析一张%s图片", typ)
+	// 翻转后写入新图片
+	return writeImg(dst, typ, hFlip(img))
+}
+
 // 水平翻转
 func hFlip(m image.Image) image.Image {
 	mb := m.Bounds()
@@ -158,18 +179,6 @@ func hFlipGIF(img *gif.GIF) {
 	}
 }
 
-func isGif(src string) (error, bool) {
-	// 读取源图片
-	_, typ, err := readImg(src)
-	if err != nil {
-		return err, false
-	}
-	if typ == "gif" {
-		return nil, true
-	}
-	return nil, false
-}
-
 func reverseGif(dst, src string) error {
 	// 读取源图片
 	g, err := readGif(src)
@@ -179,11 +188,9 @@ func reverseGif(dst, src string) error {
 	rGIF(g)
 	return writeGif(dst, g)
 }
-
 func rGIF(img *gif.GIF) {
-	var dstPalette = make([]*image.Paletted, 0)
+	dstPalette := make([]*image.Paletted, 0)
 
-	// 反优化
 	antiOptimizationGif(img.Image)
 
 	for i := len(img.Image) - 1; i > -1; i-- {
@@ -206,15 +213,14 @@ func rGIF(img *gif.GIF) {
 	img.Image = dstPalette
 }
 
+// 反优化GIF
 func antiOptimizationGif(img []*image.Paletted) {
 	for i := 1; i < len(img); i++ {
 		img[i] = imgPlusImg(img[i-1], img[i])
 	}
-
 }
-
-// 将img2重叠至img1上方并返回
 func imgPlusImg(img1, img2 *image.Paletted) *image.Paletted {
+	// 将img2重叠至img1上方并返回
 	m1b := img1.Bounds()
 	m2b := img2.Bounds()
 	X := img1.Rect.Max.X
@@ -235,12 +241,48 @@ func imgPlusImg(img1, img2 *image.Paletted) *image.Paletted {
 	dst.Palette = append(dst.Palette)
 	for x := m2b.Min.X; x < m2b.Max.X; x++ {
 		for y := m2b.Min.Y; y < m2b.Max.Y; y++ {
-			none := color.RGBA{R: 0, G: 0, B: 0, A: 0}
-			if img2.At(x, y) != none {
-				dst.Set(x, y, img2.At(x, y))
+			if img2.At(x, y) == noneColor {
+				continue // 透明 继续使用上一帧内容
 			}
+			dst.Set(x, y, img2.At(x, y))
 		}
 	}
+	return dst
+}
 
+// 优化GIF
+func optimizationGif(img []*image.Paletted) {
+	for i := len(img) - 1; i > 0; i-- {
+		println(len(img), " now:", i)
+		img[i] = compareImage(img[i-1], img[i])
+	}
+}
+func compareImage(img1, img2 *image.Paletted) *image.Paletted {
+	// img2与img1对比 如果不一样，使用img2的内容，一样就使用noneColor
+	//*只能使用未优化的GIF
+	m2b := img2.Bounds()
+	X := img1.Rect.Max.X
+	Y := img1.Rect.Max.Y
+	// 创建画板
+	dst := image.NewPaletted(image.Rect(
+		X,
+		Y,
+		0,
+		0,
+	), img1.Palette)
+	// 遍历img2内容
+	for x := m2b.Min.X; x < m2b.Max.X; x++ {
+		for y := m2b.Min.Y; y < m2b.Max.Y; y++ {
+			// 判断是否相同
+			state := img2.At(x, y) == img1.At(x, y)
+			if state {
+				// 相同
+				//dst.Set(x, y, noneColor)
+
+				continue
+			}
+			dst.Set(x, y, img2.At(x, y))
+		}
+	}
 	return dst
 }
