@@ -19,13 +19,12 @@ import (
 func main() {
 	//ReverseGif()
 
-	g, err := readGif("dstImg")
-	if err != nil {
-		fmt.Errorf("无法读取Gif图片，%v", err)
-	}
-	optimizationGif(g.Image)
-	writeGif("dst", g)
-
+	//g, err := readGif("dstImg")
+	//if err != nil {
+	//	fmt.Errorf("无法读取Gif图片，%v", err)
+	//}
+	//optimizationGif(g.Image)
+	//writeGif("dst", g)
 }
 
 var noneColor = color.RGBA{R: 0, G: 0, B: 0, A: 0}
