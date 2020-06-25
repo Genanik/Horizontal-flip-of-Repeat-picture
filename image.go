@@ -3,6 +3,7 @@ package main
 import (
 	"C"
 	"fmt"
+	"image/color"
 	"os"
 
 	"image"
@@ -16,7 +17,7 @@ import (
 )
 
 func main() {
-	ReverseGif()
+	//ReverseGif()
 }
 
 /*
@@ -180,11 +181,66 @@ func reverseGif(dst, src string) error {
 }
 
 func rGIF(img *gif.GIF) {
-	var times = 0
 	var dstPalette = make([]*image.Paletted, 0)
+
+	// 反优化
+	antiOptimizationGif(img.Image)
+
 	for i := len(img.Image) - 1; i > -1; i-- {
-		dstPalette = append(dstPalette, img.Image[i])
-		times++
+		m := img.Image[i]
+		mb := m.Bounds()
+		dst := image.NewPaletted(image.Rect(
+			mb.Max.X,
+			mb.Max.Y,
+			mb.Min.X,
+			mb.Min.Y,
+		), m.Palette)
+		for x := mb.Min.X; x < mb.Max.X; x++ {
+			for y := mb.Min.Y; y < mb.Max.Y; y++ {
+				dst.Set(x, y, m.At(x, y))
+			}
+		}
+
+		dstPalette = append(dstPalette, dst)
 	}
 	img.Image = dstPalette
+}
+
+func antiOptimizationGif(img []*image.Paletted) {
+	for i := 1; i < len(img); i++ {
+		img[i] = imgPlusImg(img[i-1], img[i])
+	}
+
+}
+
+// 将img2重叠至img1上方并返回
+func imgPlusImg(img1, img2 *image.Paletted) *image.Paletted {
+	m1b := img1.Bounds()
+	m2b := img2.Bounds()
+	X := img1.Rect.Max.X
+	Y := img1.Rect.Max.Y
+	// 复制img1到dst
+	dst := image.NewPaletted(image.Rect(
+		X,
+		Y,
+		0,
+		0,
+	), img1.Palette)
+	for x := m1b.Min.X; x < m1b.Max.X; x++ {
+		for y := m1b.Min.Y; y < m1b.Max.Y; y++ {
+			dst.Set(x, y, img1.At(x, y))
+		}
+	}
+	// 复制img2到dst
+	dst.Palette = append(dst.Palette)
+	for x := m2b.Min.X; x < m2b.Max.X; x++ {
+		for y := m2b.Min.Y; y < m2b.Max.Y; y++ {
+			none := color.RGBA{R: 0, G: 0, B: 0, A: 0}
+			if img2.At(x, y) != none {
+				dst.Set(x, y, img2.At(x, y))
+			}
+		}
+	}
+
+	return dst
 }
