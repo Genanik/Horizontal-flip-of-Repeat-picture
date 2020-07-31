@@ -32,9 +32,19 @@ func main() {
 
 var noneColor = color.RGBA{R: 0, G: 0, B: 0, A: 0}
 
+/*
+	return code:
+	-1	unexpected error
+	0	successful
+	1	is not gif
+*/
+
 //export ResizeImgToBig
 func ResizeImgToBig() int {
-	resizeImgToBIG("dstImg", "srcImg")
+	err := resizeImgToBIG("dstImg", "srcImg")
+	if err != nil {
+		return -1
+	}
 	return 0
 }
 
@@ -54,7 +64,10 @@ func resizeImgToBIG(dst, src string) error {
 
 //export ResizeImgToSmall
 func ResizeImgToSmall() int {
-	resizeImgToSMALL("dstImg", "srcImg")
+	err := resizeImgToSMALL("dstImg", "srcImg")
+	if err != nil {
+		return -1
+	}
 	return 0
 }
 
@@ -71,13 +84,6 @@ func resizeImgToSMALL(dst, src string) error {
 
 	return writeImg(dst, imgType, midB)
 }
-
-/*
-	return code:
-	-1	unexpected error
-	0	successful
-	1	is not gif
-*/
 
 //export ReverseGif
 func ReverseGif() int {
