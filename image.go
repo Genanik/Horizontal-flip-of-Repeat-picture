@@ -3,6 +3,7 @@ package main
 import (
 	"C"
 	"fmt"
+	"github.com/nfnt/resize"
 	"image/color"
 	"os"
 
@@ -18,6 +19,8 @@ import (
 
 func main() {
 	//ReverseGif()
+	//ResizeImgToBig()
+	//ResizeImgToSmall()
 
 	//g, err := readGif("dstImg")
 	//if err != nil {
@@ -28,6 +31,46 @@ func main() {
 }
 
 var noneColor = color.RGBA{R: 0, G: 0, B: 0, A: 0}
+
+//export ResizeImgToBig
+func ResizeImgToBig() int {
+	resizeImgToBIG("dstImg", "srcImg")
+	return 0
+}
+
+func resizeImgToBIG(dst, src string) error {
+	// 读取源图片
+	img, imgType, err := readImg(src)
+	if err != nil {
+		return fmt.Errorf("无法读取img，%v", err)
+	}
+
+	newX := uint(1.5 * float64(img.Bounds().Max.X))
+
+	midB := resize.Resize(newX, 0, img, resize.Bilinear)
+
+	return writeImg(dst, imgType, midB)
+}
+
+//export ResizeImgToSmall
+func ResizeImgToSmall() int {
+	resizeImgToSMALL("dstImg", "srcImg")
+	return 0
+}
+
+func resizeImgToSMALL(dst, src string) error {
+	// 读取源图片
+	img, imgType, err := readImg(src)
+	if err != nil {
+		return fmt.Errorf("无法读取img，%v", err)
+	}
+
+	newX := uint(0.5 * float64(img.Bounds().Max.X))
+
+	midB := resize.Resize(newX, 0, img, resize.Bilinear)
+
+	return writeImg(dst, imgType, midB)
+}
 
 /*
 	return code:
